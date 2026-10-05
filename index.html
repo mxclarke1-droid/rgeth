@@ -1,0 +1,305 @@
+html>
+<head>
+    <meta charset="UTF-8">
+    <title>Santa GLB Test</title>
+
+    <style>
+        html, body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #071525;
+        }
+
+        #status {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 10;
+            padding: 12px 16px;
+            background: rgba(0,0,0,.8);
+            color: white;
+            font-family: Arial;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="status">🎅 Loading Santa...</div>
+
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"
+    }
+}
+</script>
+
+<script type="module">
+
+import * as THREE from "three";
+
+import { GLTFLoader } from
+"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/GLTFLoader.js";
+
+
+const status =
+    document.getElementById("status");
+
+
+/* SCENE */
+
+const scene =
+    new THREE.Scene();
+
+scene.background =
+    new THREE.Color(0x071525);
+
+
+/* CAMERA */
+
+const camera =
+    new THREE.PerspectiveCamera(
+        45,
+        window.innerWidth /
+        window.innerHeight,
+        0.01,
+        10000
+    );
+
+camera.position.set(
+    0,
+    1,
+    6
+);
+
+
+/* RENDERER */
+
+const renderer =
+    new THREE.WebGLRenderer({
+        antialias: true
+    });
+
+renderer.setSize(
+    window.innerWidth,
+    window.innerHeight
+);
+
+renderer.setPixelRatio(
+    Math.min(window.devicePixelRatio, 2)
+);
+
+renderer.outputColorSpace =
+    THREE.SRGBColorSpace;
+
+document.body.appendChild(
+    renderer.domElement
+);
+
+
+/* LIGHTING */
+
+scene.add(
+    new THREE.HemisphereLight(
+        0xffffff,
+        0x444444,
+        3
+    )
+);
+
+const light =
+    new THREE.DirectionalLight(
+        0xffffff,
+        4
+    );
+
+light.position.set(
+    5,
+    10,
+    5
+);
+
+scene.add(light);
+
+
+/* MODEL */
+
+const loader =
+    new GLTFLoader();
+
+loader.load(
+
+    "santa_-_norad_santa_tracker.glb",
+
+    function(gltf) {
+
+        console.log("🎅 GLB LOADED!", gltf);
+
+        const santa =
+            gltf.scene;
+
+        scene.add(santa);
+
+
+        /* FIND MODEL SIZE */
+
+        const box =
+            new THREE.Box3()
+                .setFromObject(santa);
+
+        const size =
+            box.getSize(
+                new THREE.Vector3()
+            );
+
+        const center =
+            box.getCenter(
+                new THREE.Vector3()
+            );
+
+
+        console.log(
+            "MODEL SIZE:",
+            size
+        );
+
+
+        /* CENTER */
+
+        santa.position.x -=
+            center.x;
+
+        santa.position.y -=
+            center.y;
+
+        santa.position.z -=
+            center.z;
+
+
+        /* SCALE */
+
+        const largest =
+            Math.max(
+                size.x,
+                size.y,
+                size.z
+            );
+
+        const scale =
+            4 / largest;
+
+        santa.scale.setScalar(scale);
+
+
+        /* COUNT MESHES */
+
+        let count = 0;
+
+        santa.traverse(
+            object => {
+
+                if (object.isMesh) {
+
+                    count++;
+
+                    object.frustumCulled =
+                        false;
+
+                }
+
+            }
+        );
+
+
+        console.log(
+            "MESH COUNT:",
+            count
+        );
+
+
+        status.textContent =
+            "🎅 Santa loaded!";
+
+
+    },
+
+    function(progress) {
+
+        if (progress.total) {
+
+            const percent =
+                Math.round(
+                    progress.loaded /
+                    progress.total *
+                    100
+                );
+
+            status.textContent =
+                "🎅 Loading Santa... " +
+                percent +
+                "%";
+
+        }
+
+    },
+
+    function(error) {
+
+        console.error(
+            "❌ GLB ERROR:",
+            error
+        );
+
+        status.textContent =
+            "❌ Error loading Santa — press F12 and check Console.";
+
+    }
+
+);
+
+
+/* ANIMATION */
+
+function animate() {
+
+    requestAnimationFrame(
+        animate
+    );
+
+    renderer.render(
+        scene,
+        camera
+    );
+}
+
+animate();
+
+
+/* RESIZE */
+
+window.addEventListener(
+    "resize",
+    () => {
+
+        camera.aspect =
+            window.innerWidth /
+            window.innerHeight;
+
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(
+            window.innerWidth,
+            window.innerHeight
+        );
+
+    }
+);
+
+</script>
+
+</body>
+</html>
